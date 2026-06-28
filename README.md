@@ -92,3 +92,29 @@ Some examples:
 - `{url}`: No special network configuration, `EXTERNAL_WEB_DNS` is set to the external address of the docker host
 - `https://outside-address/{port}/vnc.html?host={outside-address}&autoconnect=true&password={password}&path={port}/websockify`: Java Example using a reverse proxy proxying WebVNC Ports
 - `https://{external_web_dns}/{subdir}{html5_endpoint}`: HTML5 Example using a reverse proxy
+
+## Running behind a reverse proxy
+
+When the dashboard and noVNC ports are published through a reverse proxy (TLS termination, path-based routing):
+
+| Variable | Notes |
+|---|---|
+| `WEBAPP_BASE` | Public URL of the dashboard (`https://kvm.example.com`), no trailing path. |
+| `EXTERNAL_WEB_DNS` | Hostname the **browser** uses for the noVNC iframe URL. Must resolve for clients, not only inside the server container. |
+| `WEB_PORT_START` / `WEB_PORT_END` | Exclusive end of the port range for ephemeral KVM children. A single concurrent session needs a one-port range (e.g. `8800`–`8801`). |
+| `JAVA_IFRAME_PATH_FORMAT` | Override when the proxy exposes noVNC on a different path than `{url}`. |
+
+If the server runs in Docker, `EXTERNAL_WEB_DNS` must be reachable from the server container when it health-checks the child port. On some runtimes `host-gateway` does not reach published ports on the host; map the hostname with `extra_hosts` or use the Docker host LAN IP.
+
+Proxy must forward:
+
+- Dashboard traffic to `WEBAPP_PORT`
+- Published noVNC ports in `[WEB_PORT_START, WEB_PORT_END)` to the Docker host
+
+## Troubleshooting
+
+| Symptom | Likely cause |
+|---|---|
+| Connection refused on noVNC port | Wrong `EXTERNAL_WEB_DNS`; stale `nojava-ipmi-kvmrc-*` child still holding the port. |
+| `docker run` exit 125 | Port in use; orphaned `nojava-ipmi-kvmrc-*` from an unclean server stop. |
+| Black screen / 0 fps in noVNC | Host powered off, or no VGA signal (e.g. discrete GPU without onboard VGA). |
