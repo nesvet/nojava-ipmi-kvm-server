@@ -46,10 +46,12 @@ class ConnectSpawnsTaskTest(unittest.IsolatedAsyncioTestCase):
 
         handler = self._make_handler()
         host_config = _FakeHostConfig()
+        mock_config = mock.Mock()
+        mock_config.get_servers.return_value = ["host1"]
+        mock_config.__getitem__ = mock.Mock(return_value=host_config)
 
         with mock.patch.object(kvm_handler, "start_kvm_container", slow_start):
-            with mock.patch.object(kvm_handler.config, "get_servers", return_value=["host1"]):
-                with mock.patch.object(kvm_handler.config, "__getitem__", return_value=host_config):
+            with mock.patch.object(kvm_handler, "config", mock_config):
                     with mock.patch.object(kvm_handler, "WEB_PORT_START", 8800):
                         with mock.patch.object(kvm_handler, "WEB_PORT_END", 8802):
                             await handler.on_message(
