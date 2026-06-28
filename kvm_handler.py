@@ -1,9 +1,13 @@
-import json, logging, os
+import json
+import logging
+import os
 
 try:
     from typing import List
 except ImportError:
     pass
+
+from tornado.websocket import WebSocketClosedError
 
 from nojava_ipmi_kvm.kvm import (
     start_kvm_container,
@@ -46,18 +50,28 @@ class KVMHandler(BaseWSHandler):
 
         logging.info("Websocket opened by %s", self._current_user["name"])
 
+    def _safe_write(self, message):
+        if self._is_closed:
+            return False
+        try:
+            self.write_message(message)
+            return True
+        except WebSocketClosedError:
+            self._is_closed = True
+            return False
+
     async def on_message(self, msg):
         logging.info("Websocket from %s said %s", self._current_user["name"], msg)
 
         try:
             msg = json.loads(msg)
         except json.decoder.JSONDecodeError:
-            return self.write_message({"action": "notice", "message": "Invalid json received"})
+            return self._safe_write({"action": "notice", "message": "Invalid json received"})
 
         if "action" in msg:
             if msg["action"] == "connect":
                 if self._connecting:
-                    return self.write_message({"action": "notice", "message": "Already connected to a kvm!"})
+                    return self._safe_write({"action": "notice", "message": "Already connected to a kvm!"})
                 self._connecting = True
 
                 server = msg["server"]
@@ -66,7 +80,8 @@ class KVMHandler(BaseWSHandler):
                 logging.info("%s wants to connect to %s with res %s", self._current_user["name"], server, resolution)
 
                 if server not in config.get_servers():
-                    return self.write_message(
+                    self._connecting = False
+                    return self._safe_write(
                         {"action": "notice", "message": "The specified hostname is not valid.", "refresh": True}
                     )
                 host_config = config[server]
@@ -79,7 +94,8 @@ class KVMHandler(BaseWSHandler):
                         used_ports.append(p)
                         break
                 else:
-                    return self.write_message(
+                    self._connecting = False
+                    return self._safe_write(
                         {
                             "action": "notice",
                             "message": "No unused port available. Please notify admins.",
@@ -90,7 +106,7 @@ class KVMHandler(BaseWSHandler):
                 def send_log_message(msg, *args, **kwargs):
                     if self._is_closed:
                         return
-                    self.write_message({"action": "log", "message": msg if len(args) == 0 else msg % args})
+                    self._safe_write({"action": "log", "message": msg if len(args) == 0 else msg % args})
 
                 try:
                     authorization_key = None
@@ -129,10 +145,15 @@ class KVMHandler(BaseWSHandler):
                 ) as ex:
                     logging.exception("Could not start KVM container")
                     used_ports.remove(web_port)
-                    return self.write_message({"action": "error", "message": str(ex)})
+                    self._connecting = False
+                    return self._safe_write({"action": "error", "message": str(ex)})
+
+                if self._is_closed:
+                    logging.warning("WebSocket closed before KVM connect completed; skipping connected message")
+                    return
 
                 if isinstance(sess, HTML5KvmViewer):
-                    return self.write_message(
+                    if not self._safe_write(
                         {
                             "action": "connected",
                             "url": HTML5_IFRAME_PATH_FORMAT.format(
@@ -147,9 +168,11 @@ class KVMHandler(BaseWSHandler):
                             "authorization_key": sess.authorization_key,
                             "authorization_value": sess.authorization_value,
                         }
-                    )
+                    ):
+                        logging.info("WebSocket closed while sending connected message")
+                    return
                 else:
-                    return self.write_message(
+                    if not self._safe_write(
                         {
                             "action": "connected",
                             "url": JAVA_IFRAME_PATH_FORMAT.format(
@@ -159,15 +182,18 @@ class KVMHandler(BaseWSHandler):
                                 password=sess.vnc_password,
                             ),
                         }
-                    )
+                    ):
+                        logging.info("WebSocket closed while sending connected message")
+                    return
 
-        self.write_message(
+        self._safe_write(
             {"action": "notice", "message": "Invalid msg received", "source": msg, "user": self.get_current_user()}
         )
 
     def on_close(self):
         logging.info("WS from %s closed", None if self._current_user is None else self._current_user["name"])
         self._is_closed = True
+        self._connecting = False
         if self._current_session is not None:
             used_ports.remove(self._web_port)
             self._current_session.kill_process()
