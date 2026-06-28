@@ -7,6 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>{{ title }}</title>
 	<link rel="stylesheet" href="/static/app.core.css?v={{ ui_cache }}">
+	<link rel="stylesheet" href="/static/app.ui.css?v={{ ui_cache }}">
 </head>
 <body>
 	<div class="app-shell app-page" id="app-shell">
@@ -36,5 +37,6 @@
 		window.KVM_UI_CONFIG = {% block kvm_config %}{}{% end %};
 	</script>
 	<script src="/static/app.core.js?v={{ ui_cache }}"></script>
+	<script src="/static/app.ui.js?v={{ ui_cache }}"></script>
 </body>
 </html>

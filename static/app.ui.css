@@ -1,0 +1,224 @@
+:root {
+	--font: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+	--text: #222222;
+	--text-muted: #5c6773;
+	--bg: #eef1f6;
+	--surface: #ffffff;
+	--border: #d8dee9;
+	--border-focus: #1a5fb4;
+	--accent: #1a5fb4;
+	--accent-hover: #1c71d8;
+	--accent-soft: #e8f2ff;
+	--danger: #c01c28;
+	--danger-soft: #fde8ea;
+	--radius: 8px;
+	--shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.07);
+	--label-width: 7.5rem;
+	--select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%235c6773' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
+}
+
+body {
+	font-family: var(--font);
+	color: var(--text);
+	background: var(--bg);
+}
+
+.app-page {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 2rem 1.25rem 3rem;
+}
+
+.app-header {
+	width: min(100%, 32rem);
+	margin-bottom: 1rem;
+}
+
+.app-header h1 {
+	margin: 0;
+	font-size: 1.5rem;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+}
+
+.app-header .user-meta {
+	margin: 0.35rem 0 0;
+	color: var(--text-muted);
+	font-size: 0.9rem;
+}
+
+.card {
+	width: min(100%, 32rem);
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: 1.5rem;
+}
+
+.card.is-connecting .form-grid {
+	opacity: 0.72;
+	transition: opacity 0.15s ease;
+}
+
+.form-grid {
+	grid-template-columns: var(--label-width) 1fr;
+	gap: 0.85rem 1rem;
+}
+
+.server-name {
+	margin: 0;
+	padding: 0.55rem 0;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--text);
+}
+
+.form-grid input,
+.form-grid select {
+	max-width: none;
+	padding: 0.55rem 0.65rem;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background-color: #ffffff;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-grid select {
+	appearance: none;
+	-webkit-appearance: none;
+	padding-right: 2.25rem;
+	background-image: var(--select-chevron);
+	background-repeat: no-repeat;
+	background-position: right 0.7rem center;
+	background-size: 0.75rem;
+}
+
+.form-grid input:focus,
+.form-grid select:focus {
+	outline: none;
+	border-color: var(--border-focus);
+	box-shadow: 0 0 0 3px rgba(26, 95, 180, 0.15);
+}
+
+.form-grid input:disabled,
+.form-grid select:disabled {
+	background-color: #f6f7f9;
+	color: var(--text-muted);
+}
+
+.btn {
+	min-height: 2.5rem;
+	padding: 0 1.1rem;
+	border-radius: 6px;
+	transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+	background: var(--accent-hover);
+}
+
+.btn-secondary:hover:not(:disabled) {
+	background: #f6f7f9;
+	border-color: #bcc4d0;
+}
+
+.status {
+	display: none;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.status.is-visible {
+	display: flex;
+}
+
+.status-spinner {
+	flex-shrink: 0;
+	width: 1rem;
+	height: 1rem;
+	border: 2px solid rgba(26, 95, 180, 0.2);
+	border-top-color: var(--accent);
+	border-radius: 50%;
+	animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.logs-panel {
+	padding-top: 1.25rem;
+	border-top: 1px solid var(--border);
+}
+
+.logs-panel h2 {
+	margin: 0 0 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+}
+
+#logsul {
+	max-height: 11rem;
+	overflow-y: auto;
+	font-size: 0.78rem;
+	color: var(--text-muted);
+}
+
+#logsul li {
+	padding: 0.2rem 0;
+	border-bottom: 1px solid #f0f2f5;
+}
+
+#logsul li:last-child {
+	border-bottom: none;
+}
+
+.app-footer {
+	width: min(100%, 32rem);
+	margin-top: 1rem;
+	font-size: 0.9rem;
+}
+
+.app-footer a {
+	color: var(--accent);
+	text-decoration: none;
+}
+
+.app-footer a:hover {
+	text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.status-spinner {
+		animation: none;
+		border-color: rgba(26, 95, 180, 0.35);
+		border-top-color: var(--accent);
+	}
+
+	.card.is-connecting .form-grid {
+		transition: none;
+	}
+}
+
+@media (max-width: 520px) {
+	.form-grid {
+		grid-template-columns: 1fr;
+		gap: 0.35rem;
+	}
+
+	.form-actions {
+		flex-direction: column;
+	}
+
+	.btn {
+		width: 100%;
+	}
+}
