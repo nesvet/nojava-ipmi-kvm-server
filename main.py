@@ -10,7 +10,7 @@ import os
 import signal
 
 from tornado.web import authenticated
-from tornado import web, ioloop
+from tornado import ioloop, web
 
 from nojava_ipmi_kvm.config import config, DEFAULT_CONFIG_FILEPATH
 from nojava_ipmi_kvm.stale_children import cleanup_stale_kvm_children
@@ -27,6 +27,13 @@ CONFIG_PATH = os.environ.get("KVM_CONFIG_PATH", DEFAULT_CONFIG_FILEPATH)
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
 config.read_config(CONFIG_PATH)
+
+
+def server_labels():
+    labels = {}
+    for server_id in config.get_servers():
+        labels[server_id] = config[server_id].full_hostname
+    return labels
 
 
 def _stale_port_range():
@@ -59,8 +66,10 @@ class MainHandler(BaseHandler):
             title="Remote KVM",
             user=self.get_current_user(),
             servers=config.get_servers(),
+            server_labels=server_labels(),
             base_uri=WEBAPP_BASE,
             websocket_uri="ws" + WEBAPP_BASE[4:],
+            version=__version__,
         )
 
     @authenticated
@@ -71,18 +80,17 @@ class MainHandler(BaseHandler):
             title="Remote KVM",
             user=self.get_current_user(),
             servers=config.get_servers(),
+            server_labels=server_labels(),
             base_uri=WEBAPP_BASE,
             websocket_uri="ws" + WEBAPP_BASE[4:],
             server_name=json.dumps(self.get_body_argument("server_name")),
             password=json.dumps(self.get_body_argument("password")),
             resolution=json.dumps(self.get_body_argument("resolution")),
+            version=__version__,
         )
 
 
 def make_app():
-    """
-    returns a tornado.web.Application
-    """
     settings = {
         "template_path": "templates",
         "static_path": "static",
@@ -95,7 +103,7 @@ def make_app():
     }
     return web.Application(
         [web.url(r"/oauth/login", OAuth2LoginHandler), web.url(r"/", MainHandler), web.url(r"/kvm", KVMHandler)],
-        **settings
+        **settings,
     )
 
 
