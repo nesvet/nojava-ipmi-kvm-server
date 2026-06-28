@@ -3,14 +3,17 @@
 __version__ = "0.2.2"
 __author__ = "M. Heuwes <m.heuwes@fz-juelich.de>"
 
-import os
+import atexit
 import json
 import logging
+import os
+import signal
 
 from tornado.web import authenticated
 from tornado import web, ioloop
 
 from nojava_ipmi_kvm.config import config, DEFAULT_CONFIG_FILEPATH
+from nojava_ipmi_kvm.stale_children import cleanup_stale_kvm_children
 from nojava_ipmi_kvm import utils
 
 from login_handler import OAuth2LoginHandler
@@ -24,6 +27,28 @@ CONFIG_PATH = os.environ.get("KVM_CONFIG_PATH", DEFAULT_CONFIG_FILEPATH)
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
 config.read_config(CONFIG_PATH)
+
+
+def _stale_port_range():
+    return (
+        int(os.environ.get("WEB_PORT_START", 8800)),
+        int(os.environ.get("WEB_PORT_END", 8900)),
+    )
+
+
+def _cleanup_stale_children():
+    port_start, port_end = _stale_port_range()
+    cleanup_stale_kvm_children(port_start, port_end)
+
+
+def _shutdown_handler(signum, frame):
+    _cleanup_stale_children()
+    ioloop.IOLoop.current().stop()
+
+
+_cleanup_stale_children()
+signal.signal(signal.SIGTERM, _shutdown_handler)
+atexit.register(_cleanup_stale_children)
 
 
 class MainHandler(BaseHandler):
@@ -67,7 +92,6 @@ def make_app():
         "login_url": "/oauth/login",
         "xsrf_cookies": True,
         "default_handler_class": MainHandler,
-        "websocket_ping_interval": 10,
     }
     return web.Application(
         [web.url(r"/oauth/login", OAuth2LoginHandler), web.url(r"/", MainHandler), web.url(r"/kvm", KVMHandler)],
