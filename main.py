@@ -50,6 +50,7 @@ def _cleanup_stale_children():
 
 def _shutdown_handler(signum, frame):
     _cleanup_stale_children()
+    ioloop.IOLoop.current().stop()
 
 
 _cleanup_stale_children()
@@ -99,7 +100,7 @@ def make_app():
         "login_url": "/oauth/login",
         "xsrf_cookies": True,
         "default_handler_class": MainHandler,
-        "websocket_ping_interval": None,
+        "websocket_ping_interval": 10,
     }
     return web.Application(
         [web.url(r"/oauth/login", OAuth2LoginHandler), web.url(r"/", MainHandler), web.url(r"/kvm", KVMHandler)],
