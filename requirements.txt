@@ -1,4 +1,4 @@
 tornado>=6.0.0
-nojava-ipmi-kvm>=0.9.2
+nojava-ipmi-kvm @ git+https://github.com/nesvet/nojava-ipmi-kvm@develop
 ldap3>=2.4.1
 certifi>=2019.11.28
