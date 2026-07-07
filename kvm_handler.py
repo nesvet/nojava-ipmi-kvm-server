@@ -18,6 +18,9 @@ from nojava_ipmi_kvm.kvm import (
     DockerNotCallableError,
     DockerPortNotReadableError,
     DockerTerminatedError,
+    KvmDownloadFailedError,
+    KvmLoginFailedError,
+    KvmStartupTimeoutError,
     HTML5KvmViewer,
     JavaKvmViewer,
 )
@@ -37,6 +40,18 @@ HTML5_SUBDIR_FORMAT = os.environ.get("HTML5_SUBDIR_FORMAT", "")
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 
 used_ports: List[int] = []
+
+
+def _error_code_for_exception(ex):
+    if isinstance(ex, KvmLoginFailedError):
+        return "bmc_auth"
+    if isinstance(ex, KvmDownloadFailedError):
+        return "bmc_download"
+    if isinstance(ex, WebserverNotReachableError):
+        return "bmc_unreachable"
+    if isinstance(ex, KvmStartupTimeoutError):
+        return "startup_timeout"
+    return None
 
 
 class KVMHandler(BaseWSHandler):
@@ -167,11 +182,16 @@ class KVMHandler(BaseWSHandler):
             IOError,
             DockerTerminatedError,
             DockerPortNotReadableError,
+            KvmStartupTimeoutError,
         ) as ex:
             logging.exception("Could not start KVM container")
             if web_port is not None:
                 self._release_web_port(web_port)
-            return self._safe_write({"action": "error", "message": str(ex)})
+            payload = {"action": "error", "message": str(ex)}
+            error_code = _error_code_for_exception(ex)
+            if error_code is not None:
+                payload["code"] = error_code
+            return self._safe_write(payload)
         finally:
             self._connecting = False
 
