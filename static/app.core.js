@@ -112,7 +112,21 @@
 		updateLogsVisibility();
 	}
 
-	function clearLogs() {
+	function clearPasswordInvalidState() {
+		if (!els.password) {
+			return;
+		}
+		els.password.removeAttribute("aria-invalid");
+		els.password.classList.remove("field-error");
+	}
+
+	function setPasswordInvalidState() {
+		if (!els.password) {
+			return;
+		}
+		els.password.setAttribute("aria-invalid", "true");
+		els.password.classList.add("field-error");
+	}
 		if (!els.logsUl) {
 			return;
 		}
@@ -286,10 +300,19 @@
 				var isError = data.action === "error";
 				appendLog(data.message, isError);
 				if (isError) {
-					handleConnectFailure("Failed to connect.", focusAfterFailure, {
-						title: "Failed to connect",
+					var isAuth = data.code === "bmc_auth";
+					var bannerMessage = isAuth
+						? "Incorrect BMC password."
+						: data.message || "Failed to connect.";
+					handleConnectFailure(bannerMessage, isAuth ? function () {
+						focusField(els.password);
+					} : focusAfterFailure, {
+						title: isAuth ? "Authentication failed" : "Failed to connect",
 						logMessage: false,
 					});
+					if (isAuth) {
+						setPasswordInvalidState();
+					}
 				}
 			}
 		};
@@ -414,6 +437,9 @@
 	}
 	updateLogsVisibility();
 	connectWebSocket();
+	if (els.password) {
+		els.password.addEventListener("input", clearPasswordInvalidState);
+	}
 	if (els.form) {
 		els.form.addEventListener("submit", function (evt) {
 			evt.preventDefault();

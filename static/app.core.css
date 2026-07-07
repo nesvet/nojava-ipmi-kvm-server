@@ -92,6 +92,11 @@ body.session-active .app-shell {
 	font: inherit;
 }
 
+.form-grid input[aria-invalid="true"],
+.form-grid input.field-error {
+	border-color: #c01c28;
+}
+
 .form-actions {
 	grid-column: 1 / -1;
 	display: flex;
