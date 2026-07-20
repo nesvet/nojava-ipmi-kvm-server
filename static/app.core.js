@@ -127,6 +127,8 @@
 		els.password.setAttribute("aria-invalid", "true");
 		els.password.classList.add("field-error");
 	}
+
+	function clearLogs() {
 		if (!els.logsUl) {
 			return;
 		}
