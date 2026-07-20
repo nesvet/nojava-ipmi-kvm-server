@@ -54,13 +54,19 @@
 		if (!k.els.resolution) {
 			return;
 		}
+		var options = getResolutionOptions();
 		try {
 			var saved = localStorage.getItem(RESOLUTION_STORAGE_KEY);
-			if (saved && getResolutionOptions().indexOf(saved) !== -1) {
+			if (saved && options.indexOf(saved) !== -1) {
 				k.els.resolution.value = saved;
+				return;
 			}
 		} catch (e) {
 			/* ignore */
+		}
+		var fromConfig = k.config && k.config.defaultResolution;
+		if (fromConfig && options.indexOf(fromConfig) !== -1) {
+			k.els.resolution.value = fromConfig;
 		}
 	};
 

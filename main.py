@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 __author__ = "M. Heuwes <m.heuwes@fz-juelich.de>"
 
 import atexit
@@ -70,6 +70,7 @@ class MainHandler(BaseHandler):
             server_labels=server_labels(),
             base_uri=WEBAPP_BASE,
             websocket_uri="ws" + WEBAPP_BASE[4:],
+            default_resolution=config.x_resolution,
             version=__version__,
         )
 
@@ -87,6 +88,7 @@ class MainHandler(BaseHandler):
             server_name=json.dumps(self.get_body_argument("server_name")),
             password=json.dumps(self.get_body_argument("password")),
             resolution=json.dumps(self.get_body_argument("resolution")),
+            default_resolution=config.x_resolution,
             version=__version__,
         )
 

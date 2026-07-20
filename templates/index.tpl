@@ -32,6 +32,7 @@
 {
 	websocketUri: "{{ websocket_uri }}",
 	autoConnect: false,
-	serverCount: {{ len(servers) }}
+	serverCount: {{ len(servers) }},
+	defaultResolution: "{{ default_resolution }}"
 }
 {% end %}
